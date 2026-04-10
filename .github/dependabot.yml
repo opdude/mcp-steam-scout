@@ -1,5 +1,11 @@
 version: 2
 updates:
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
   # Go dependency updates
   - package-ecosystem: "gomod"
     directory: "/"
