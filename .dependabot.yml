@@ -5,9 +5,17 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
 
   # npm dependency updates
   - package-ecosystem: "npm"
     directory: "/npm"
     schedule:
       interval: "weekly"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
