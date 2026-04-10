@@ -1,7 +1,7 @@
 # mcp-steam-scout
 
 [![MCP Server](https://img.shields.io/badge/MCP-Server-blue)](https://modelcontextprotocol.io)
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam library and current gaming trends** to make personalised game recommendations weighted by actual playtime.

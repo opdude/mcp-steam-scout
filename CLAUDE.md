@@ -24,5 +24,10 @@ Build the local binary using `task build`.
 - `internal/mcp`: MCP tool definitions and protocol handling.
 - `pkg/models`: Shared data structures.
 
+
 ## Deployment
 We use [GoReleaser](https://goreleaser.com/) to build and distribute binaries for various platforms.
+
+## Commit & Push Rules
+- Always use semantic commit messages (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
+- Never push changes to the remote repository without explicit permission.
