@@ -16,7 +16,8 @@ Add to your MCP client config (e.g. Claude Code or Claude Desktop):
       "command": "npx",
       "args": ["-y", "@opdude/mcp-steam-scout"],
       "env": {
-        "STEAM_API_KEY": "your_steam_api_key_here"
+        "STEAM_API_KEY": "your_steam_api_key_here",
+        "STEAM_USERNAME": "your_steam_username_here"
       }
     }
   }
@@ -25,12 +26,14 @@ Add to your MCP client config (e.g. Claude Code or Claude Desktop):
 
 Get a free Steam API key at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
 
+You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME` for the server to function.
+
 ## Available tools
 
 | Tool | Description |
 |------|-------------|
 | `resolve_steam_id` | Convert a Steam vanity username to a numeric Steam ID |
-| `get_library` | Fetch your owned games with playtime data |
+| `get_library` | Fetch your owned games with playtime data (requires STEAM_ID or STEAM_USERNAME) |
 | `get_trending` | Get currently trending games from the Steam store |
 
 ## Example prompt
