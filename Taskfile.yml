@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the MCP server binary
+    cmds:
+      - go build -o bin/mcp-server ./cmd/mcp-server/main.go
+
+  test:
+    desc: Run all unit tests
+    cmds:
+      - go test ./...
+
+  tidy:
+    desc: Tidy up go modules
+    cmds:
+      - go mod tidy
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - go tool golangci-lint run ./cmd/... ./internal/... ./pkg/...

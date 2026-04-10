@@ -1,0 +1,13 @@
+# Binaries
+bin/
+npm/bin/
+
+# Go
+*.test
+*.out
+
+# Environment
+.env
+
+# Claude Code local settings
+.claude/
