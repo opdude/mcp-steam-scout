@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    name: GoReleaser
+    name: GoReleaser + npm publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +22,30 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      # Strip the leading 'v' from the tag (v1.2.3 → 1.2.3) and write it
+      # into npm/package.json so install.js builds the correct download URL.
+      - name: Sync npm package version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          npm version "$VERSION" --no-git-tag-version
+        working-directory: npm
+
+      # GoReleaser creates the GitHub release and uploads the binaries.
+      # npm publish runs after so install.js can actually download them.
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to npm
+        run: npm publish --access public
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

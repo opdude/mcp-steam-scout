@@ -1,6 +1,6 @@
 {
   "name": "@opdude/mcp-steam-scout",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "MCP server that recommends games based on your Steam library and current trends",
   "bin": {
     "mcp-steam-scout": "run.js"
