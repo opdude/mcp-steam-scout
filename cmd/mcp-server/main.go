@@ -18,12 +18,25 @@ func main() {
 	log.Println("Starting server...")
 
 	apiKey := os.Getenv("STEAM_API_KEY")
+	steamID := os.Getenv("STEAM_ID")
+	username := os.Getenv("STEAM_USERNAME")
+
 	if apiKey == "" {
 		log.Println("Warning: STEAM_API_KEY not set")
 	}
 
+	adapter := adapter.NewSteamAdapter(apiKey, steamID)
+	if username != "" && steamID == "" {
+		id, err := adapter.ResolveVanityURL(username)
+		if err != nil {
+			log.Printf("Warning: failed to resolve username: %v", err)
+		} else {
+			adapter.DefaultSteamID = id
+		}
+	}
+
 	server := mcp.SetupServer(
-		adapter.NewSteamAdapter(apiKey),
+		adapter,
 		scraper.NewTrendingScraper(),
 	)
 

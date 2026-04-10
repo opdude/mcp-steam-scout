@@ -10,15 +10,17 @@ import (
 
 // SteamAdapter implements the interface for Steam.
 type SteamAdapter struct {
-	APIKey string
-	Client *http.Client
+	APIKey         string
+	DefaultSteamID string
+	Client         *http.Client
 }
 
 // NewSteamAdapter creates a new SteamAdapter.
-func NewSteamAdapter(apiKey string) *SteamAdapter {
+func NewSteamAdapter(apiKey, defaultSteamID string) *SteamAdapter {
 	return &SteamAdapter{
-		APIKey: apiKey,
-		Client: &http.Client{},
+		APIKey:         apiKey,
+		DefaultSteamID: defaultSteamID,
+		Client:         &http.Client{},
 	}
 }
 
@@ -28,7 +30,15 @@ func (s *SteamAdapter) GetLibrary(userID string) ([]models.Game, error) {
 		return nil, fmt.Errorf("steam API key is not configured")
 	}
 
-	url := fmt.Sprintf("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=%s&key=%s&format=json&include_appinfo=true", userID, s.APIKey)
+	id := userID
+	if id == "" {
+		id = s.DefaultSteamID
+	}
+	if id == "" {
+		return nil, fmt.Errorf("no user ID provided and no default user ID configured")
+	}
+
+	url := fmt.Sprintf("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=%s&key=%s&format=json&include_appinfo=true", id, s.APIKey)
 
 	resp, err := s.Client.Get(url)
 	if err != nil {

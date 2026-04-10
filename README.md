@@ -92,7 +92,8 @@ Your Steam ID is a 17-digit number (e.g. `76561197962821445`). You can:
       "command": "npx",
       "args": ["-y", "@opdude/mcp-steam-scout"],
       "env": {
-        "STEAM_API_KEY": "your_steam_api_key_here"
+        "STEAM_API_KEY": "your_steam_api_key_here",
+        "STEAM_ID": "your_optional_steam_id_here"
       }
     }
   }
@@ -107,7 +108,8 @@ Your Steam ID is a 17-digit number (e.g. `76561197962821445`). You can:
     "mcp-steam-scout": {
       "command": "/path/to/bin/mcp-server",
       "env": {
-        "STEAM_API_KEY": "your_steam_api_key_here"
+        "STEAM_API_KEY": "your_steam_api_key_here",
+        "STEAM_ID": "your_optional_steam_id_here"
       }
     }
   }

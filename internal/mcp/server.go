@@ -76,7 +76,11 @@ func SetupServer(steam *adapter.SteamAdapter, scraper *scraper.TrendingScraper) 
 			Description: "Get games from your library",
 		},
 		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input LibraryInput) (*mcp_sdk.CallToolResult, LibraryOutput, error) {
-			games, err := steam.GetLibrary(input.UserID)
+			userID := input.UserID
+			if userID == "" {
+				userID = steam.DefaultSteamID
+			}
+			games, err := steam.GetLibrary(userID)
 			if err != nil {
 				return &mcp_sdk.CallToolResult{
 					Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
