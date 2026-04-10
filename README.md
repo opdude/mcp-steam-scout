@@ -27,7 +27,7 @@ Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-
 | Tool | What it does |
 |------|-------------|
 | `resolve_steam_id` | Converts a Steam vanity username to a numeric Steam ID |
-| `get_library` | Fetches your owned games including playtime data |
+| `get_library` | Fetches your owned games including playtime data (requires STEAM_ID or STEAM_USERNAME) |
 | `get_trending` | Returns currently trending games from the Steam store |
 
 ---
@@ -72,16 +72,18 @@ go tool task build
 # binary is written to ./bin/mcp-server
 ```
 
-### Find your Steam ID
+### Find your Steam Username or ID
 
-Your Steam ID is a 17-digit number (e.g. `76561197962821445`). You can:
+You can configure the server using your Steam vanity username or your 17-digit Steam ID. You can:
 
-- Ask Claude to run `resolve_steam_id` with your vanity username
-- Look it up manually at [steamid.io](https://steamid.io)
+- Look up your Steam ID manually at [steamid.io](https://steamid.io)
+- Ask Claude to run `resolve_steam_id` with your vanity username to find your ID.
 
 ---
 
 ## Client configuration
+
+You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME` for the server to function.
 
 ### Claude Code / Claude Desktop (npx)
 
@@ -93,7 +95,7 @@ Your Steam ID is a 17-digit number (e.g. `76561197962821445`). You can:
       "args": ["-y", "@opdude/mcp-steam-scout"],
       "env": {
         "STEAM_API_KEY": "your_steam_api_key_here",
-        "STEAM_ID": "your_optional_steam_id_here"
+        "STEAM_USERNAME": "your_steam_username_here"
       }
     }
   }
@@ -109,7 +111,7 @@ Your Steam ID is a 17-digit number (e.g. `76561197962821445`). You can:
       "command": "/path/to/bin/mcp-server",
       "env": {
         "STEAM_API_KEY": "your_steam_api_key_here",
-        "STEAM_ID": "your_optional_steam_id_here"
+        "STEAM_USERNAME": "your_steam_username_here"
       }
     }
   }

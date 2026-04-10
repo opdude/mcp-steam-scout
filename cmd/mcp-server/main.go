@@ -22,7 +22,10 @@ func main() {
 	username := os.Getenv("STEAM_USERNAME")
 
 	if apiKey == "" {
-		log.Println("Warning: STEAM_API_KEY not set")
+		log.Fatal("STEAM_API_KEY must be set")
+	}
+	if steamID == "" && username == "" {
+		log.Fatal("Either STEAM_ID or STEAM_USERNAME must be set")
 	}
 
 	adapter := adapter.NewSteamAdapter(apiKey, steamID)

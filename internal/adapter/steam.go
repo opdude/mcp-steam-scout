@@ -24,21 +24,17 @@ func NewSteamAdapter(apiKey, defaultSteamID string) *SteamAdapter {
 	}
 }
 
-// GetLibrary fetches the user's owned games from the Steam Web API.
-func (s *SteamAdapter) GetLibrary(userID string) ([]models.Game, error) {
+// GetLibrary fetches the user's owned games from the Steam Web API using the DefaultSteamID.
+func (s *SteamAdapter) GetLibrary() ([]models.Game, error) {
 	if s.APIKey == "" {
 		return nil, fmt.Errorf("steam API key is not configured")
 	}
 
-	id := userID
-	if id == "" {
-		id = s.DefaultSteamID
-	}
-	if id == "" {
-		return nil, fmt.Errorf("no user ID provided and no default user ID configured")
+	if s.DefaultSteamID == "" {
+		return nil, fmt.Errorf("no default user ID configured")
 	}
 
-	url := fmt.Sprintf("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=%s&key=%s&format=json&include_appinfo=true", id, s.APIKey)
+	url := fmt.Sprintf("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?steamid=%s&key=%s&format=json&include_appinfo=true", s.DefaultSteamID, s.APIKey)
 
 	resp, err := s.Client.Get(url)
 	if err != nil {

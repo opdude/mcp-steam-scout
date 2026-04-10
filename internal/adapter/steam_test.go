@@ -36,8 +36,8 @@ func (r *rewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 func TestGetLibrary_NoAPIKey(t *testing.T) {
-	a := NewSteamAdapter("")
-	_, err := a.GetLibrary("12345")
+	a := NewSteamAdapter("", "")
+	_, err := a.GetLibrary()
 	if err == nil {
 		t.Fatal("expected error when API key is empty")
 	}
@@ -49,7 +49,7 @@ func TestGetLibrary_HTTPError(t *testing.T) {
 	})
 	defer srv.Close()
 
-	_, err := a.GetLibrary("12345")
+	_, err := a.GetLibrary()
 	if err == nil {
 		t.Fatal("expected error on non-200 response")
 	}
@@ -67,8 +67,9 @@ func TestGetLibrary_ParsesGamesAndPlaytime(t *testing.T) {
 		})
 	})
 	defer srv.Close()
+	a.DefaultSteamID = "12345"
 
-	games, err := a.GetLibrary("12345")
+	games, err := a.GetLibrary()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -93,8 +94,9 @@ func TestGetLibrary_EmptyLibrary(t *testing.T) {
 		})
 	})
 	defer srv.Close()
+	a.DefaultSteamID = "12345"
 
-	games, err := a.GetLibrary("12345")
+	games, err := a.GetLibrary()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -104,7 +106,7 @@ func TestGetLibrary_EmptyLibrary(t *testing.T) {
 }
 
 func TestResolveVanityURL_NoAPIKey(t *testing.T) {
-	a := NewSteamAdapter("")
+	a := NewSteamAdapter("", "")
 	_, err := a.ResolveVanityURL("someuser")
 	if err == nil {
 		t.Fatal("expected error when API key is empty")
