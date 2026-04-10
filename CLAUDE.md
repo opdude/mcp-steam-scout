@@ -30,4 +30,4 @@ We use [GoReleaser](https://goreleaser.com/) to build and distribute binaries fo
 
 ## Commit & Push Rules
 - Always use semantic commit messages (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
-- Never push changes to the remote repository without explicit permission.
+- **CRITICAL:** NEVER push changes to the remote repository without explicit permission from the user for EVERY push.
