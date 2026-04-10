@@ -5,6 +5,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   # Go dependency updates
   - package-ecosystem: "gomod"
