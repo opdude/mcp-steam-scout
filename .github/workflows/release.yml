@@ -30,7 +30,7 @@ jobs:
 
       # GoReleaser creates the GitHub release and uploads the binaries.
       # npm publish runs after so install.js can actually download them.
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean
