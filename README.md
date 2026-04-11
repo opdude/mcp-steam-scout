@@ -4,7 +4,7 @@
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam library and current gaming trends** to make personalised game recommendations weighted by actual playtime.
+An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam and PlayStation libraries and current gaming trends** to make personalised game recommendations weighted by actual playtime.
 
 Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk).
 
@@ -24,11 +24,21 @@ Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-
 
 ## Features
 
+### Steam tools
+
 | Tool | What it does |
 |------|-------------|
 | `resolve_steam_id` | Converts a Steam vanity username to a numeric Steam ID |
-| `get_library` | Fetches your owned games including playtime data (requires STEAM_ID or STEAM_USERNAME) |
+| `get_library` | Fetches your owned Steam games including playtime data |
 | `get_trending` | Returns currently trending games from the Steam store |
+
+### PlayStation tools (optional)
+
+Enabled automatically when `PSN_NPSSO` is set.
+
+| Tool | What it does |
+|------|-------------|
+| `get_psn_library` | Fetches your PS5 and PS4 games including playtime data |
 
 ---
 
@@ -40,9 +50,11 @@ Ask Claude things like:
 
 > "What are the top trending games on Steam right now? Which ones match my playstyle based on my library?"
 
+> "Compare my Steam and PlayStation libraries — what genres do I play most across both platforms?"
+
 > "I mostly play strategy games — are any trending games in that genre worth trying?"
 
-Claude chains the three tools together automatically, cross-references your playtime with current trends, and gives you personalised recommendations.
+Claude chains the tools together automatically, cross-references your playtime with current trends, and gives you personalised recommendations.
 
 ---
 
@@ -79,11 +91,21 @@ You can configure the server using your Steam vanity username or your 17-digit S
 - Look up your Steam ID manually at [steamid.io](https://steamid.io)
 - Ask Claude to run `resolve_steam_id` with your vanity username to find your ID.
 
+### Get your PSN NPSSO token (optional)
+
+The NPSSO token is a session token issued by Sony after you log in to PlayStation. Sony does not provide an official API key — this is the standard method used by PSN tools and libraries.
+
+1. Log in to [playstation.com](https://www.playstation.com) in your browser and make sure you are fully signed in.
+2. Visit [https://ca.account.sony.com/api/v1/ssocookie](https://ca.account.sony.com/api/v1/ssocookie) — while logged in, this returns a JSON response containing your `npsso` value.
+3. Copy the `npsso` value from the response and set it as `PSN_NPSSO` in your MCP client config.
+
+> **Token expiry**: The NPSSO token expires after a period of inactivity. If PSN tools return authentication errors, repeat the steps above to get a fresh token.
+
 ---
 
 ## Client configuration
 
-You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME` for the server to function.
+You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME`. `PSN_NPSSO` is optional and enables PlayStation tools when set.
 
 ### Claude Code / Claude Desktop (npx)
 
@@ -95,7 +117,8 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
       "args": ["-y", "@opdude/mcp-steam-scout"],
       "env": {
         "STEAM_API_KEY": "your_steam_api_key_here",
-        "STEAM_USERNAME": "your_steam_username_here"
+        "STEAM_USERNAME": "your_steam_username_here",
+        "PSN_NPSSO": "your_npsso_token_here"
       }
     }
   }
@@ -111,12 +134,22 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
       "command": "/path/to/bin/mcp-server",
       "env": {
         "STEAM_API_KEY": "your_steam_api_key_here",
-        "STEAM_USERNAME": "your_steam_username_here"
+        "STEAM_USERNAME": "your_steam_username_here",
+        "PSN_NPSSO": "your_npsso_token_here"
       }
     }
   }
 }
 ```
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `STEAM_API_KEY` | Yes | Steam Web API key from [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) |
+| `STEAM_ID` | One of these | Your 17-digit numeric Steam ID |
+| `STEAM_USERNAME` | One of these | Your Steam vanity username |
+| `PSN_NPSSO` | No | NPSSO token from the `npsso` cookie on playstation.com. Enables PSN tools when set. |
 
 ---
 
@@ -136,8 +169,8 @@ go tool task lint    # run golangci-lint
 
 ```
 cmd/mcp-server/     entry point
-internal/adapter/   Steam Web API client
-internal/scraper/   Steam store trending scraper
+internal/adapter/   Steam and PSN API clients
+internal/scraper/   Steam and PlayStation Store trending scrapers
 internal/mcp/       MCP tool definitions
 pkg/models/         shared data structures
 npm/                npx wrapper and binary installer

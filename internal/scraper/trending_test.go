@@ -43,19 +43,13 @@ func TestGetTrendingGames_HTTPError(t *testing.T) {
 	}
 }
 
-func TestGetTrendingGames_ParsesTopSellersAndNewReleases(t *testing.T) {
+func TestGetTrendingGames_ParsesItems(t *testing.T) {
 	s, srv := newTestScraper(t, func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"top_sellers": map[string]any{
-				"items": []map[string]any{
-					{"id": 1, "name": "Game A"},
-					{"id": 2, "name": "Game B"},
-				},
-			},
-			"new_releases": map[string]any{
-				"items": []map[string]any{
-					{"id": 3, "name": "Game C"},
-				},
+			"items": []map[string]any{
+				{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
+				{"name": "Game B", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
+				{"name": "Game C", "logo": "https://cdn.example.com/store_item_assets/steam/apps/300/capsule.jpg"},
 			},
 		})
 	})
@@ -68,21 +62,18 @@ func TestGetTrendingGames_ParsesTopSellersAndNewReleases(t *testing.T) {
 	if len(games) != 3 {
 		t.Fatalf("expected 3 games, got %d", len(games))
 	}
+	if games[0].ID != "100" || games[0].Name != "Game A" {
+		t.Errorf("unexpected first game: %+v", games[0])
+	}
 }
 
-func TestGetTrendingGames_DeduplicatesAcrossSections(t *testing.T) {
+func TestGetTrendingGames_Deduplicates(t *testing.T) {
 	s, srv := newTestScraper(t, func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"top_sellers": map[string]any{
-				"items": []map[string]any{
-					{"id": 1, "name": "Game A"},
-				},
-			},
-			"new_releases": map[string]any{
-				"items": []map[string]any{
-					{"id": 1, "name": "Game A"}, // duplicate
-					{"id": 2, "name": "Game B"},
-				},
+			"items": []map[string]any{
+				{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
+				{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"}, // duplicate
+				{"name": "Game B", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
 			},
 		})
 	})
@@ -97,17 +88,13 @@ func TestGetTrendingGames_DeduplicatesAcrossSections(t *testing.T) {
 	}
 }
 
-func TestGetTrendingGames_SkipsEmptyNames(t *testing.T) {
+func TestGetTrendingGames_SkipsEmptyNamesAndMissingIDs(t *testing.T) {
 	s, srv := newTestScraper(t, func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"top_sellers": map[string]any{
-				"items": []map[string]any{
-					{"id": 1, "name": ""},
-					{"id": 2, "name": "Valid Game"},
-				},
-			},
-			"new_releases": map[string]any{
-				"items": []map[string]any{},
+			"items": []map[string]any{
+				{"name": "", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
+				{"name": "No ID Game", "logo": "https://cdn.example.com/no-app-id-here.jpg"},
+				{"name": "Valid Game", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
 			},
 		})
 	})
@@ -121,6 +108,6 @@ func TestGetTrendingGames_SkipsEmptyNames(t *testing.T) {
 		t.Fatalf("expected 1 game, got %d", len(games))
 	}
 	if games[0].Name != "Valid Game" {
-		t.Errorf("unexpected game name: %s", games[0].Name)
+		t.Errorf("unexpected game: %+v", games[0])
 	}
 }

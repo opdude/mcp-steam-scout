@@ -4,9 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
+
+const trendingURL = "https://store.steampowered.com/search/results/?filter=topsellers&json=1&count=100"
+
+// appIDFromLogo extracts the Steam app ID from a store capsule image URL.
+// Example: https://...steam/apps/730/capsule_sm_120.jpg → "730"
+var appIDFromLogo = regexp.MustCompile(`/apps/(\d+)/`)
 
 // TrendingScraper fetches trending games from external sources.
 type TrendingScraper struct {
@@ -20,9 +27,9 @@ func NewTrendingScraper() *TrendingScraper {
 	}
 }
 
-// GetTrendingGames fetches currently trending games from Steam's top sellers.
+// GetTrendingGames fetches the top 100 trending games from the Steam store top sellers list.
 func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
-	resp, err := s.Client.Get("https://store.steampowered.com/api/featuredcategories/")
+	resp, err := s.Client.Get(trendingURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch trending games: %w", err)
 	}
@@ -33,45 +40,34 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 	}
 
 	var result struct {
-		TopSellers struct {
-			Items []struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			} `json:"items"`
-		} `json:"top_sellers"`
-		NewReleases struct {
-			Items []struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			} `json:"items"`
-		} `json:"new_releases"`
+		Items []struct {
+			Name string `json:"name"`
+			Logo string `json:"logo"`
+		} `json:"items"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode steam response: %w", err)
 	}
 
-	seen := make(map[int]bool)
+	seen := make(map[string]bool)
 	var games []models.Game
 
-	for _, item := range result.TopSellers.Items {
-		if item.Name == "" || seen[item.ID] {
+	for _, item := range result.Items {
+		if item.Name == "" {
 			continue
 		}
-		seen[item.ID] = true
-		games = append(games, models.Game{
-			ID:   fmt.Sprintf("%d", item.ID),
-			Name: item.Name,
-		})
-	}
-
-	for _, item := range result.NewReleases.Items {
-		if item.Name == "" || seen[item.ID] {
+		m := appIDFromLogo.FindStringSubmatch(item.Logo)
+		if m == nil {
 			continue
 		}
-		seen[item.ID] = true
+		id := m[1]
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
 		games = append(games, models.Game{
-			ID:   fmt.Sprintf("%d", item.ID),
+			ID:   id,
 			Name: item.Name,
 		})
 	}
