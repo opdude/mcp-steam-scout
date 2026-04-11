@@ -52,7 +52,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 		server,
 		&mcp_sdk.Tool{
 			Name:        "get_trending",
-			Description: "Get currently trending games from the Steam store",
+			Description: "Get currently trending games from the Steam store. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
 		},
 		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input TrendingInput) (*mcp_sdk.CallToolResult, TrendingOutput, error) {
 			games, err := cfg.SteamScraper.GetTrendingGames()
@@ -82,7 +82,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 		server,
 		&mcp_sdk.Tool{
 			Name:        "get_library",
-			Description: "Get games from your Steam library",
+			Description: "Get games from your Steam library. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
 		},
 		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input LibraryInput) (*mcp_sdk.CallToolResult, LibraryOutput, error) {
 			games, err := cfg.Steam.GetLibrary()
@@ -102,7 +102,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 			server,
 			&mcp_sdk.Tool{
 				Name:        "get_psn_library",
-				Description: "Get games from your PlayStation library",
+				Description: "Get games from your PlayStation library. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
 			},
 			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input PSNLibraryInput) (*mcp_sdk.CallToolResult, PSNLibraryOutput, error) {
 				games, err := cfg.PSN.GetLibrary()
