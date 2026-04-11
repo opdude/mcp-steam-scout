@@ -28,20 +28,34 @@ func main() {
 		log.Fatal("Either STEAM_ID or STEAM_USERNAME must be set")
 	}
 
-	adapter := adapter.NewSteamAdapter(apiKey, steamID)
+	steamAdapter := adapter.NewSteamAdapter(apiKey, steamID)
 	if username != "" && steamID == "" {
-		id, err := adapter.ResolveVanityURL(username)
+		id, err := steamAdapter.ResolveVanityURL(username)
 		if err != nil {
 			log.Printf("Warning: failed to resolve username: %v", err)
 		} else {
-			adapter.DefaultSteamID = id
+			steamAdapter.DefaultSteamID = id
 		}
 	}
 
-	server := mcp.SetupServer(
-		adapter,
-		scraper.NewTrendingScraper(),
-	)
+	cfg := mcp.ServerConfig{
+		Steam:        steamAdapter,
+		SteamScraper: scraper.NewTrendingScraper(),
+	}
+
+	// PSN support is optional. When PSN_NPSSO is set, the PSN adapter authenticates
+	// at startup and the get_psn_library and get_psn_trending tools are registered.
+	if npsso := os.Getenv("PSN_NPSSO"); npsso != "" {
+		psnAdapter, err := adapter.NewPSNAdapter(npsso)
+		if err != nil {
+			log.Printf("Warning: failed to initialize PSN adapter: %v", err)
+		} else {
+			cfg.PSN = psnAdapter
+			log.Println("PSN adapter initialized")
+		}
+	}
+
+	server := mcp.SetupServer(cfg)
 
 	log.Println("Server setup, running...")
 	if err := server.Run(context.Background(), &mcp_sdk.StdioTransport{}); err != nil {
