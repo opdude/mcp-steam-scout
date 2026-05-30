@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       # GoReleaser creates the GitHub release and uploads the binaries.
       # npm publish runs after so install.js can actually download them.
