@@ -1,0 +1,20 @@
+{
+  "$schema": "https://claude.ai/schemas/marketplace.json",
+  "name": "mcp-steam-scout",
+  "owner": {
+    "name": "opdude"
+  },
+  "description": "MCP server + Claude Code skills for cross-platform game recommendations",
+  "plugins": [
+    {
+      "name": "game-selector",
+      "source": "./plugins/game-selector",
+      "description": "Recommends games by cross-referencing your Steam, PSN, Xbox, Epic, and GOG libraries with current trends"
+    },
+    {
+      "name": "mcp-steam-scout-setup",
+      "source": "./plugins/mcp-steam-scout-setup",
+      "description": "Guides you through setting up all platform tokens (Steam, PSN, Xbox, Epic, GOG) and configuring the mcp-steam-scout MCP server"
+    }
+  ]
+}

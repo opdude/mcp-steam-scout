@@ -1,0 +1,8 @@
+{
+  "name": "mcp-steam-scout-setup",
+  "description": "Guides you through setting up all platform tokens and configuring the mcp-steam-scout MCP server",
+  "version": "1.0.0",
+  "author": {
+    "name": "opdude"
+  }
+}
