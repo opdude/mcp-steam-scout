@@ -105,7 +105,17 @@ func TestIntegration_Trending(t *testing.T) {
 	if len(out.Games) == 0 {
 		t.Fatal("expected at least 1 trending game")
 	}
-	t.Logf("trending: %d games, first: %s", len(out.Games), out.Games[0].Name)
+	platforms := make(map[string]int)
+	for _, g := range out.Games {
+		platforms[g.Platform]++
+	}
+	t.Logf("trending: %d games, platforms: %v", len(out.Games), platforms)
+	if platforms["steam"] == 0 {
+		t.Error("expected steam trending games")
+	}
+	if platforms["gog"] > 0 {
+		t.Logf("gog trending: %d games", platforms["gog"])
+	}
 }
 
 func TestIntegration_SteamLibrary(t *testing.T) {
