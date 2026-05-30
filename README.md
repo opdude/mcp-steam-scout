@@ -4,7 +4,7 @@
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam, PlayStation, and Xbox libraries and current gaming trends** to make personalised game recommendations weighted by actual playtime.
+An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam, PlayStation, Xbox, Epic Games Store, and GOG libraries and current gaming trends** to make personalised game recommendations weighted by actual playtime.
 
 Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk).
 
@@ -56,6 +56,14 @@ Enabled automatically when `EPIC_REFRESH_TOKEN` is set.
 |------|-------------|
 | `get_epic_library` | Fetches your Epic Games Store library (playtime data is not available from Epic's API) |
 
+### GOG tools (optional)
+
+Enabled automatically when `GOG_REFRESH_TOKEN` is set.
+
+| Tool | What it does |
+|------|-------------|
+| `get_gog_library` | Fetches your GOG library including playtime data |
+
 ---
 
 ## What you can do with it
@@ -66,7 +74,7 @@ Ask Claude things like:
 
 > "What are the top trending games on Steam right now? Which ones match my playstyle based on my library?"
 
-> "Compare my Steam, PlayStation, and Xbox libraries — what genres do I play most across all platforms?"
+> "Compare my Steam, PlayStation, Xbox, Epic, and GOG libraries — what genres do I play most across all platforms?"
 
 > "I mostly play strategy games — are any trending games in that genre worth trying?"
 
@@ -149,6 +157,33 @@ The tool will:
 
 > **Privacy policy / EULA acceptance**: If authentication fails with `corrective_action_required`, first visit [store.epicgames.com](https://store.epicgames.com) in your browser, log in, and accept any pending privacy policy or terms of service prompts. Then try the setup tool again.
 
+### Get your GOG refresh token (optional)
+
+The GOG refresh token is obtained via an OAuth flow. Run the setup tool directly (no clone needed):
+
+```bash
+go run github.com/opdude/mcp-steam-scout/cmd/setup-gog@latest
+```
+
+The tool will:
+1. Display a URL to visit and sign in
+2. After login, you'll be redirected to a URL containing an authorization code
+3. Paste the code into the CLI
+4. Print the `GOG_REFRESH_TOKEN` value to add to your config
+
+> **Playtime data**: GOG playtime requires an additional web session cookie. Set `GOG_COOKIE` to the value of the `gog-al` cookie from your browser after logging into gog.com. Without it, your GOG library is still available but without playtime data.
+
+### Install the game recommendation skill (Claude Code)
+
+This repo also provides a Claude Code skill that gives AI agents cross-platform game recommendation awareness. Install it:
+
+```bash
+/plugin marketplace add opdude/mcp-steam-scout
+/plugin install game-selector@mcp-steam-scout
+```
+
+The skill makes the agent automatically check all your configured platforms and trending games when you ask for a recommendation.
+
 ### Validate your PSN NPSSO (optional)
 
 A validation tool is included to test your NPSSO token before adding it to your config (no clone needed):
@@ -163,7 +198,7 @@ The tool authenticates with Sony and fetches your game library, confirming the t
 
 ## Client configuration
 
-You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME`. `PSN_NPSSO` and `XBOX_REFRESH_TOKEN` are optional and enable PlayStation and Xbox tools respectively when set.
+You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME`. All other tokens are optional and enable additional platform tools when set.
 
 ### Claude Code / Claude Desktop (npx)
 
@@ -178,7 +213,9 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
         "STEAM_USERNAME": "your_steam_username_here",
         "PSN_NPSSO": "your_npsso_token_here",
         "XBOX_REFRESH_TOKEN": "your_xbox_refresh_token_here",
-        "EPIC_REFRESH_TOKEN": "your_epic_refresh_token_here"
+        "EPIC_REFRESH_TOKEN": "your_epic_refresh_token_here",
+        "GOG_REFRESH_TOKEN": "your_gog_refresh_token_here",
+        "GOG_COOKIE": "your_gog_al_cookie_value_here"
       }
     }
   }
@@ -197,7 +234,9 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
         "STEAM_USERNAME": "your_steam_username_here",
         "PSN_NPSSO": "your_npsso_token_here",
         "XBOX_REFRESH_TOKEN": "your_xbox_refresh_token_here",
-        "EPIC_REFRESH_TOKEN": "your_epic_refresh_token_here"
+        "EPIC_REFRESH_TOKEN": "your_epic_refresh_token_here",
+        "GOG_REFRESH_TOKEN": "your_gog_refresh_token_here",
+        "GOG_COOKIE": "your_gog_al_cookie_value_here"
       }
     }
   }
@@ -214,6 +253,8 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
 | `PSN_NPSSO` | No | NPSSO token from the `npsso` cookie on playstation.com. Enables PSN tools when set. |
 | `XBOX_REFRESH_TOKEN` | No | Xbox refresh token from the device code flow. Enables Xbox tools when set. Obtain via `go run github.com/opdude/mcp-steam-scout/cmd/setup-xbox@latest`. |
 | `EPIC_REFRESH_TOKEN` | No | Epic refresh token from the OAuth flow. Enables Epic Games Store tools when set. Obtain via `go run github.com/opdude/mcp-steam-scout/cmd/setup-epic@latest`. |
+| `GOG_REFRESH_TOKEN` | No | GOG refresh token from the OAuth flow. Enables GOG tools when set. Obtain via `go run github.com/opdude/mcp-steam-scout/cmd/setup-gog@latest`. |
+| `GOG_COOKIE` | No | GOG web session cookie (`gog-al`). Enables playtime data for GOG library. Get the value from your browser cookies after logging into gog.com. |
 
 ---
 
@@ -234,9 +275,10 @@ go tool task lint    # run golangci-lint
 ```
 cmd/mcp-server/     MCP server entry point
 cmd/setup-epic/     Epic OAuth flow setup tool
+cmd/setup-gog/      GOG OAuth flow setup tool
 cmd/setup-psn/      PSN NPSSO validation tool
 cmd/setup-xbox/     Xbox device code flow setup tool
-internal/adapter/   Steam, PSN, Xbox, and Epic API clients
+internal/adapter/   Steam, PSN, Xbox, Epic, and GOG API clients
 internal/scraper/   Steam and PlayStation Store trending scrapers
 internal/mcp/       MCP tool definitions
 pkg/models/         shared data structures
