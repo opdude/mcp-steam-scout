@@ -9,7 +9,10 @@ import (
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
 
-const gogTrendingURL = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=popularity&limit=20"
+const (
+	gogPopularURL = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=popularity&limit=10"
+	gogNewURL     = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=date&limit=24"
+)
 
 type gogTrendingResponse struct {
 	Products []struct {
@@ -19,19 +22,39 @@ type gogTrendingResponse struct {
 }
 
 func (s *TrendingScraper) fetchGOGTrending() ([]models.Game, error) {
-	resp, err := s.Client.Get(gogTrendingURL)
+	popular, _ := s.fetchGOGList(gogPopularURL)
+	newReleases, _ := s.fetchGOGList(gogNewURL)
+
+	seen := make(map[string]bool)
+	var games []models.Game
+
+	for _, list := range [][]models.Game{popular, newReleases} {
+		for _, g := range list {
+			if seen[g.ID] {
+				continue
+			}
+			seen[g.ID] = true
+			games = append(games, g)
+		}
+	}
+
+	return games, nil
+}
+
+func (s *TrendingScraper) fetchGOGList(url string) ([]models.Game, error) {
+	resp, err := s.Client.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch GOG trending: %w", err)
+		return nil, fmt.Errorf("gog request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GOG store returned %s", resp.Status)
+		return nil, fmt.Errorf("gog store returned %s", resp.Status)
 	}
 
 	var result gogTrendingResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode GOG response: %w", err)
+		return nil, fmt.Errorf("failed to decode gog response: %w", err)
 	}
 
 	games := make([]models.Game, 0, len(result.Products))
