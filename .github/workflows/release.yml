@@ -25,8 +25,9 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
       # GoReleaser creates the GitHub release and uploads the binaries.
       # npm publish runs after so install.js can actually download them.
@@ -47,11 +48,8 @@ jobs:
         working-directory: npm
 
       # Uses npm's trusted publisher (OIDC) — no NODE_AUTH_TOKEN needed.
-      # Requires the package on npmjs.com to trust this repo as a publisher.
+      # Requires npm CLI 11.5.1+ (Node 22.14+) for OIDC auto-detection.
+      # Provenance is generated automatically — no --provenance flag needed.
       - name: Publish to npm
-        run: |
-          # Remove setup-node's .npmrc which has an empty _authToken and
-          # interferes with npm's OIDC auto-detection in GHA.
-          rm -f "$NPM_CONFIG_USERCONFIG"
-          npm publish --access public --provenance
+        run: npm publish --access public
         working-directory: npm
