@@ -10,4 +10,5 @@ npm/bin/
 .env
 
 # Claude Code local settings
-.claude/
+.claude/settings.json
+.claude/local/

@@ -1,0 +1,8 @@
+{
+  "name": "game-selector",
+  "description": "Recommends games by cross-referencing your Steam, PSN, Xbox, Epic, and GOG libraries with current trends",
+  "version": "1.0.0",
+  "author": {
+    "name": "opdude"
+  }
+}
