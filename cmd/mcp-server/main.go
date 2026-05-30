@@ -55,6 +55,18 @@ func main() {
 		}
 	}
 
+	// Xbox support is optional. When XBOX_REFRESH_TOKEN is set, the Xbox adapter
+	// is initialized and the get_xbox_library tool is registered.
+	if xboxRefresh := os.Getenv("XBOX_REFRESH_TOKEN"); xboxRefresh != "" {
+		xboxAdapter, err := adapter.NewXboxAdapter(xboxRefresh)
+		if err != nil {
+			log.Printf("Warning: failed to initialize Xbox adapter: %v", err)
+		} else {
+			cfg.Xbox = xboxAdapter
+			log.Println("Xbox adapter initialized")
+		}
+	}
+
 	server := mcp.SetupServer(cfg)
 
 	log.Println("Server setup, running...")

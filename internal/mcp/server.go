@@ -32,12 +32,33 @@ type PSNLibraryOutput struct {
 	Games []models.Game `json:"games"`
 }
 
+type XboxLibraryInput struct{}
+type XboxLibraryOutput struct {
+	Games []models.Game `json:"games"`
+}
+
+type XboxAuthURLInput struct{}
+type XboxAuthURLOutput struct {
+	SessionID string `json:"sessionID"`
+	URL       string `json:"url"`
+	UserCode  string `json:"userCode"`
+}
+
+type XboxAuthPollInput struct {
+	SessionID string `json:"sessionID"`
+}
+type XboxAuthPollOutput struct {
+	RefreshToken string `json:"refreshToken,omitempty"`
+	Done         bool   `json:"done"`
+}
+
 // ServerConfig holds the adapters and scrapers to register as MCP tools.
-// PSN is optional — set to nil to disable PSN tools.
+// PSN and Xbox are optional — set to nil to disable their tools.
 type ServerConfig struct {
 	Steam        *adapter.SteamAdapter
 	SteamScraper *scraper.TrendingScraper
 	PSN          *adapter.PSNAdapter
+	Xbox         *adapter.XboxAdapter
 }
 
 // SetupServer initializes the MCP server with tools based on the provided config.
@@ -116,6 +137,67 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 			},
 		)
 
+	}
+
+	// Xbox setup tools — always registered, no token needed.
+	mcp_sdk.AddTool(
+		server,
+		&mcp_sdk.Tool{
+			Name:        "get_xbox_auth_url",
+			Description: "Start the Xbox device code auth flow. Returns a URL and user code. The user must visit the URL and enter the code. Then call complete_xbox_auth with the sessionID.",
+		},
+		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input XboxAuthURLInput) (*mcp_sdk.CallToolResult, XboxAuthURLOutput, error) {
+			sessionID, url, userCode, err := adapter.StartXboxDeviceAuth()
+			if err != nil {
+				return &mcp_sdk.CallToolResult{
+					Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+					IsError: true,
+				}, XboxAuthURLOutput{}, nil
+			}
+			return nil, XboxAuthURLOutput{SessionID: sessionID, URL: url, UserCode: userCode}, nil
+		},
+	)
+
+	mcp_sdk.AddTool(
+		server,
+		&mcp_sdk.Tool{
+			Name:        "complete_xbox_auth",
+			Description: "Poll for completion of an Xbox device code auth flow. Call this after the user has authenticated at the URL. If done is false, the user hasn't finished yet. If done is true, the refreshToken is returned.",
+		},
+		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input XboxAuthPollInput) (*mcp_sdk.CallToolResult, XboxAuthPollOutput, error) {
+			token, done, err := adapter.PollXboxDeviceAuth(input.SessionID)
+			if err != nil {
+				return &mcp_sdk.CallToolResult{
+					Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+					IsError: true,
+				}, XboxAuthPollOutput{}, nil
+			}
+			if done {
+				return nil, XboxAuthPollOutput{RefreshToken: token, Done: true}, nil
+			}
+			return nil, XboxAuthPollOutput{Done: false}, nil
+		},
+	)
+
+	// Xbox tools — registered only when an Xbox adapter is provided.
+	if cfg.Xbox != nil {
+		mcp_sdk.AddTool(
+			server,
+			&mcp_sdk.Tool{
+				Name:        "get_xbox_library",
+				Description: "Get games from your Xbox library. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
+			},
+			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input XboxLibraryInput) (*mcp_sdk.CallToolResult, XboxLibraryOutput, error) {
+				games, err := cfg.Xbox.GetLibrary(ctx)
+				if err != nil {
+					return &mcp_sdk.CallToolResult{
+						Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+						IsError: true,
+					}, XboxLibraryOutput{}, nil
+				}
+				return nil, XboxLibraryOutput{Games: games}, nil
+			},
+		)
 	}
 
 	return server
