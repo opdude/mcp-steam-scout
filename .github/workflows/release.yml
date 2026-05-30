@@ -49,5 +49,9 @@ jobs:
       # Uses npm's trusted publisher (OIDC) — no NODE_AUTH_TOKEN needed.
       # Requires the package on npmjs.com to trust this repo as a publisher.
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: |
+          # Remove setup-node's .npmrc which has an empty _authToken and
+          # interferes with npm's OIDC auto-detection in GHA.
+          rm -f "$NPM_CONFIG_USERCONFIG"
+          npm publish --access public --provenance
         working-directory: npm
