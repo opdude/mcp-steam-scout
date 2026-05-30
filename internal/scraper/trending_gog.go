@@ -12,23 +12,34 @@ import (
 const (
 	gogPopularURL = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=popularity&limit=10"
 	gogNewURL     = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=date&limit=24"
+	gogRatingURL  = "https://www.gog.com/games/ajax/filtered?mediaType=game&sort=rating&limit=24"
 )
 
 type gogTrendingResponse struct {
 	Products []struct {
-		ID    int    `json:"id"`
-		Title string `json:"title"`
+		ID           int    `json:"id"`
+		Title        string `json:"title"`
+		IsDiscounted bool   `json:"isDiscounted"`
+		Price        struct {
+			Amount             string `json:"amount"`
+			BaseAmount         string `json:"baseAmount"`
+			FinalAmount        string `json:"finalAmount"`
+			IsDiscounted       bool   `json:"isDiscounted"`
+			DiscountPercentage int    `json:"discountPercentage"`
+			Symbol             string `json:"symbol"`
+		} `json:"price"`
 	} `json:"products"`
 }
 
 func (s *TrendingScraper) fetchGOGTrending() ([]models.Game, error) {
 	popular, _ := s.fetchGOGList(gogPopularURL)
 	newReleases, _ := s.fetchGOGList(gogNewURL)
+	topRated, _ := s.fetchGOGList(gogRatingURL)
 
 	seen := make(map[string]bool)
 	var games []models.Game
 
-	for _, list := range [][]models.Game{popular, newReleases} {
+	for _, list := range [][]models.Game{popular, newReleases, topRated} {
 		for _, g := range list {
 			if seen[g.ID] {
 				continue
@@ -65,9 +76,13 @@ func (s *TrendingScraper) fetchGOGList(url string) ([]models.Game, error) {
 		}
 		seen[p.ID] = true
 		games = append(games, models.Game{
-			ID:       strconv.Itoa(p.ID),
-			Name:     p.Title,
-			Platform: "gog",
+			ID:                strconv.Itoa(p.ID),
+			Name:              p.Title,
+			Platform:          "gog",
+			PriceAmount:       p.Price.FinalAmount,
+			PriceBaseAmount:   p.Price.BaseAmount,
+			PriceIsDiscounted: p.Price.IsDiscounted,
+			PriceCurrency:     p.Price.Symbol,
 		})
 	}
 
