@@ -2,9 +2,12 @@ version: '3'
 
 tasks:
   build:
-    desc: Build the MCP server binary
+    desc: Build all binaries
     cmds:
       - go build -o bin/mcp-server ./cmd/mcp-server/main.go
+      - go build -o bin/setup-xbox ./cmd/setup-xbox/main.go
+      - go build -o bin/setup-psn ./cmd/setup-psn/main.go
+      - go build -o bin/setup-epic ./cmd/setup-epic/main.go
 
   test:
     desc: Run all unit tests
