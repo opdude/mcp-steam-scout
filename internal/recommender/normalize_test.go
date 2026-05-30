@@ -24,6 +24,13 @@ func TestNormalizeName(t *testing.T) {
 		{"The Witcher 3: Wild Hunt - Game of the Year Edition", "witcher 3 wild hunt"},
 		{"Disco Elysium - The Final Cut", "disco elysium the final cut"},
 		{"Divinity: Original Sin 2 - Definitive Edition", "divinity original sin 2"},
+		{"Borderlands GOTY", "borderlands"},
+		{"Borderlands GOTY Enhanced", "borderlands"},
+		{"Darksiders", "darksiders"},
+		{"Darksiders Warmastered Edition", "darksiders"},
+		{"Elden Ring™", "elden ring"},
+		{"Elden Ring®", "elden ring"},
+		{"PUBG: BATTLEGROUNDS™", "pubg battlegrounds"},
 		{"", ""},
 	}
 	for _, tt := range tests {
