@@ -32,12 +32,18 @@ type PSNLibraryOutput struct {
 	Games []models.Game `json:"games"`
 }
 
+type EpicLibraryInput struct{}
+type EpicLibraryOutput struct {
+	Games []models.Game `json:"games"`
+}
+
 // ServerConfig holds the adapters and scrapers to register as MCP tools.
-// PSN is optional — set to nil to disable PSN tools.
+// PSN and Epic are optional — set to nil to disable their tools.
 type ServerConfig struct {
 	Steam        *adapter.SteamAdapter
 	SteamScraper *scraper.TrendingScraper
 	PSN          *adapter.PSNAdapter
+	Epic         *adapter.EpicAdapter
 }
 
 // SetupServer initializes the MCP server with tools based on the provided config.
@@ -116,6 +122,27 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 			},
 		)
 
+	}
+
+	// Epic tools — registered only when an Epic adapter is provided.
+	if cfg.Epic != nil {
+		mcp_sdk.AddTool(
+			server,
+			&mcp_sdk.Tool{
+				Name:        "get_epic_library",
+				Description: "Get games from your Epic Games Store library. Note: playtime data is not available from Epic's API.",
+			},
+			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input EpicLibraryInput) (*mcp_sdk.CallToolResult, EpicLibraryOutput, error) {
+				games, err := cfg.Epic.GetLibrary()
+				if err != nil {
+					return &mcp_sdk.CallToolResult{
+						Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+						IsError: true,
+					}, EpicLibraryOutput{}, nil
+				}
+				return nil, EpicLibraryOutput{Games: games}, nil
+			},
+		)
 	}
 
 	return server
