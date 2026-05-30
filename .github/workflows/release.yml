@@ -26,7 +26,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
 
       # GoReleaser creates the GitHub release and uploads the binaries.
       # npm publish runs after so install.js can actually download them.
@@ -46,8 +45,8 @@ jobs:
           npm version "$VERSION" --no-git-tag-version
         working-directory: npm
 
+      # Uses npm's trusted publisher (OIDC) — no NODE_AUTH_TOKEN needed.
+      # Requires the package on npmjs.com to trust this repo as a publisher.
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         working-directory: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
