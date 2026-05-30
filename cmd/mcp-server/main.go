@@ -67,6 +67,18 @@ func main() {
 		}
 	}
 
+	// Epic support is optional. When EPIC_REFRESH_TOKEN is set, the Epic adapter
+	// is initialized and the get_epic_library tool is registered.
+	if epicRefresh := os.Getenv("EPIC_REFRESH_TOKEN"); epicRefresh != "" {
+		epicAdapter, err := adapter.NewEpicAdapter(epicRefresh)
+		if err != nil {
+			log.Printf("Warning: failed to initialize Epic adapter: %v", err)
+		} else {
+			cfg.Epic = epicAdapter
+			log.Println("Epic adapter initialized")
+		}
+	}
+
 	server := mcp.SetupServer(cfg)
 
 	log.Println("Server setup, running...")
