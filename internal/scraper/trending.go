@@ -33,7 +33,7 @@ func NewTrendingScraper() *TrendingScraper {
 	}
 }
 
-// GetTrendingGames fetches the top 100 trending games from the Steam store top sellers list.
+// GetTrendingGames fetches trending games from Steam, GOG, and Epic Games Store.
 // Results are cached for 30 minutes.
 func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 	s.mu.Lock()
@@ -44,14 +44,30 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 	}
 	s.mu.Unlock()
 
+	steamGames, _ := s.fetchSteamTrending()
+	gogGames, _ := s.fetchGOGTrending()
+
+	allGames := make([]models.Game, 0, len(steamGames)+len(gogGames))
+	allGames = append(allGames, steamGames...)
+	allGames = append(allGames, gogGames...)
+
+	s.mu.Lock()
+	s.cacheGames = allGames
+	s.cacheExpiry = time.Now().Add(30 * time.Minute)
+	s.mu.Unlock()
+
+	return allGames, nil
+}
+
+func (s *TrendingScraper) fetchSteamTrending() ([]models.Game, error) {
 	resp, err := s.Client.Get(trendingURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch trending games: %w", err)
+		return nil, fmt.Errorf("steam request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("steam store returned error: %s", resp.Status)
+		return nil, fmt.Errorf("steam store returned %s", resp.Status)
 	}
 
 	var result struct {
@@ -87,11 +103,6 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 			Platform: "steam",
 		})
 	}
-
-	s.mu.Lock()
-	s.cacheGames = games
-	s.cacheExpiry = time.Now().Add(30 * time.Minute)
-	s.mu.Unlock()
 
 	return games, nil
 }

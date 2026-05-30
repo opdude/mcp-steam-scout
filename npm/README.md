@@ -41,7 +41,12 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
 |------|-------------|
 | `resolve_steam_id` | Convert a Steam vanity username to a numeric Steam ID |
 | `get_library` | Fetch your owned Steam games with playtime data |
-| `get_trending` | Get currently trending games from the Steam store |
+
+### Trending (no setup required)
+
+| Tool | Description |
+|------|-------------|
+| `get_trending` | Get currently trending games from Steam and GOG |
 
 ### PlayStation (requires `PSN_NPSSO`)
 
