@@ -3,7 +3,7 @@
 [![MCP Server](https://img.shields.io/badge/MCP-Server-blue)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/opdude/mcp-steam-scout/blob/main/LICENSE)
 
-An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam and PlayStation libraries and current gaming trends** to make personalised game recommendations.
+An [MCP](https://modelcontextprotocol.io) server that gives AI assistants like Claude access to your **Steam, PlayStation, and Xbox libraries and current gaming trends** to make personalised game recommendations.
 
 ## Quick start
 
@@ -18,7 +18,9 @@ Add to your MCP client config (e.g. Claude Code or Claude Desktop):
       "env": {
         "STEAM_API_KEY": "your_steam_api_key_here",
         "STEAM_USERNAME": "your_steam_username_here",
-        "PSN_NPSSO": "your_npsso_token_here"
+        "PSN_NPSSO": "your_npsso_token_here",
+        "XBOX_REFRESH_TOKEN": "your_xbox_refresh_token_here",
+        "EPIC_REFRESH_TOKEN": "your_epic_refresh_token_here"
       }
     }
   }
@@ -27,7 +29,7 @@ Add to your MCP client config (e.g. Claude Code or Claude Desktop):
 
 Get a free Steam API key at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
 
-You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME`. `PSN_NPSSO` is optional — omit it if you don't need PlayStation tools.
+You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_USERNAME`. `PSN_NPSSO`, `XBOX_REFRESH_TOKEN`, and `EPIC_REFRESH_TOKEN` are optional — omit them if you don't need PlayStation, Xbox, or Epic Games Store tools.
 
 ## Available tools
 
@@ -45,6 +47,18 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
 |------|-------------|
 | `get_psn_library` | Fetch your PS5 and PS4 games with playtime data |
 
+### Xbox (requires `XBOX_REFRESH_TOKEN`)
+
+| Tool | Description |
+|------|-------------|
+| `get_xbox_library` | Fetch your Xbox game library via Xbox Live |
+
+### Epic Games Store (requires `EPIC_REFRESH_TOKEN`)
+
+| Tool | Description |
+|------|-------------|
+| `get_epic_library` | Fetch your Epic Games Store library (playtime data is not available from Epic's API) |
+
 ## Getting your PSN NPSSO token
 
 The NPSSO token is a session token issued by Sony after you log in to PlayStation. Sony does not provide an official API key — this is the standard method used by PSN tools and libraries.
@@ -55,11 +69,33 @@ The NPSSO token is a session token issued by Sony after you log in to PlayStatio
 
 > **Token expiry**: The NPSSO token expires after a period of inactivity. If PSN tools return authentication errors, repeat the steps above to get a fresh token.
 
+## Getting your Xbox refresh token
+
+The Xbox refresh token is obtained via Microsoft's device code flow. Run the setup tool directly (no clone needed):
+
+```bash
+go run github.com/opdude/mcp-steam-scout/cmd/setup-xbox@latest
+```
+
+The tool will guide you through authentication and print the `XBOX_REFRESH_TOKEN` value to add to your config.
+
+## Getting your Epic Games Store refresh token
+
+The Epic refresh token is obtained via an OAuth flow. Run the setup tool directly (no clone needed):
+
+```bash
+go run github.com/opdude/mcp-steam-scout/cmd/setup-epic@latest
+```
+
+The tool will guide you through authentication and print the `EPIC_REFRESH_TOKEN` value to add to your config.
+
+> **Privacy policy / EULA acceptance**: If authentication fails with `corrective_action_required`, first visit [store.epicgames.com](https://store.epicgames.com) in your browser, log in, and accept any pending privacy policy or terms of service prompts. Then try the setup tool again.
+
 ## Example prompts
 
 > "Fetch my Steam library, check what's trending, and recommend me something new to play based on what I've played the most."
 
-> "Compare my Steam and PlayStation libraries — what genres do I play most across both platforms?"
+> "Compare my Steam, PlayStation, and Xbox libraries — what genres do I play most across all platforms?"
 
 ## Full documentation
 
