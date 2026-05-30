@@ -30,7 +30,12 @@ Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-
 |------|-------------|
 | `resolve_steam_id` | Converts a Steam vanity username to a numeric Steam ID |
 | `get_library` | Fetches your owned Steam games including playtime data |
-| `get_trending` | Returns currently trending games from the Steam store |
+
+### Trending (no setup required)
+
+| Tool | What it does |
+|------|-------------|
+| `get_trending` | Returns currently trending games from Steam and GOG |
 
 ### PlayStation tools (optional)
 

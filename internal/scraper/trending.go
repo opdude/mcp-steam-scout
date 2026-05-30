@@ -46,13 +46,10 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 
 	steamGames, _ := s.fetchSteamTrending()
 	gogGames, _ := s.fetchGOGTrending()
-	epicGames, _ := s.fetchEpicTrending()
 
-	total := len(steamGames) + len(gogGames) + len(epicGames)
-	allGames := make([]models.Game, 0, total)
+	allGames := make([]models.Game, 0, len(steamGames)+len(gogGames))
 	allGames = append(allGames, steamGames...)
 	allGames = append(allGames, gogGames...)
-	allGames = append(allGames, epicGames...)
 
 	s.mu.Lock()
 	s.cacheGames = allGames
