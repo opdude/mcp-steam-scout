@@ -82,8 +82,9 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 		}
 		seen[id] = true
 		games = append(games, models.Game{
-			ID:   id,
-			Name: item.Name,
+			ID:       id,
+			Name:     item.Name,
+			Platform: "steam",
 		})
 	}
 

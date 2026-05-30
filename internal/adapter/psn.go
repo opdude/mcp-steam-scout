@@ -204,6 +204,7 @@ func (p *PSNAdapter) GetLibrary() ([]models.Game, error) {
 		games = append(games, models.Game{
 			ID:              t.TitleID,
 			Name:            t.Name,
+			Platform:        "psn",
 			PlaytimeMinutes: parseISO8601Duration(t.PlayDuration),
 		})
 	}

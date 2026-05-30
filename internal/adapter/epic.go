@@ -213,8 +213,9 @@ func (e *EpicAdapter) GetLibrary() ([]models.Game, error) {
 			displayName = n
 		}
 		games = append(games, models.Game{
-			ID:   r.Namespace + ":" + r.CatalogItemID,
-			Name: displayName,
+			ID:       r.Namespace + ":" + r.CatalogItemID,
+			Name:     displayName,
+			Platform: "epic",
 		})
 	}
 
