@@ -328,8 +328,9 @@ func (x *XboxAdapter) fetchTitles(ctx context.Context, userhash, xstsToken, xuid
 			continue
 		}
 		out = append(out, models.Game{
-			ID:   g.TitleID,
-			Name: g.Name,
+			ID:       g.TitleID,
+			Name:     g.Name,
+			Platform: "xbox",
 		})
 	}
 

@@ -80,6 +80,7 @@ func (s *SteamAdapter) GetLibrary() ([]models.Game, error) {
 		games = append(games, models.Game{
 			ID:              fmt.Sprintf("%d", g.AppID),
 			Name:            g.Name,
+			Platform:        "steam",
 			PlaytimeMinutes: g.PlaytimeForever,
 		})
 	}
