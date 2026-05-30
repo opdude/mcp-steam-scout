@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -9,6 +10,20 @@ import (
 	"github.com/opdude/mcp-steam-scout/internal/scraper"
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
+
+// prettyJSONResult marshals v as indented JSON into a CallToolResult TextContent.
+func prettyJSONResult(v any) *mcp_sdk.CallToolResult {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return &mcp_sdk.CallToolResult{
+			Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+			IsError: true,
+		}
+	}
+	return &mcp_sdk.CallToolResult{
+		Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: string(b)}},
+	}
+}
 
 type TrendingInput struct{}
 type TrendingOutput struct {
@@ -89,7 +104,13 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 		},
 		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input TrendingInput) (*mcp_sdk.CallToolResult, TrendingOutput, error) {
 			games, err := cfg.SteamScraper.GetTrendingGames()
-			return nil, TrendingOutput{Games: games}, err
+			if err != nil {
+				return &mcp_sdk.CallToolResult{
+					Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+					IsError: true,
+				}, TrendingOutput{}, nil
+			}
+			return prettyJSONResult(TrendingOutput{Games: games}), TrendingOutput{}, nil
 		},
 	)
 
@@ -125,7 +146,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 					IsError: true,
 				}, LibraryOutput{}, nil
 			}
-			return nil, LibraryOutput{Games: games}, nil
+			return prettyJSONResult(LibraryOutput{Games: games}), LibraryOutput{}, nil
 		},
 	)
 
@@ -145,7 +166,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 						IsError: true,
 					}, PSNLibraryOutput{}, nil
 				}
-				return nil, PSNLibraryOutput{Games: games}, nil
+				return prettyJSONResult(PSNLibraryOutput{Games: games}), PSNLibraryOutput{}, nil
 			},
 		)
 
@@ -207,7 +228,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 						IsError: true,
 					}, XboxLibraryOutput{}, nil
 				}
-				return nil, XboxLibraryOutput{Games: games}, nil
+				return prettyJSONResult(XboxLibraryOutput{Games: games}), XboxLibraryOutput{}, nil
 			},
 		)
 	}
@@ -228,7 +249,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 						IsError: true,
 					}, EpicLibraryOutput{}, nil
 				}
-				return nil, EpicLibraryOutput{Games: games}, nil
+				return prettyJSONResult(EpicLibraryOutput{Games: games}), EpicLibraryOutput{}, nil
 			},
 		)
 	}
@@ -249,7 +270,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 						IsError: true,
 					}, GOGLibraryOutput{}, nil
 				}
-				return nil, GOGLibraryOutput{Games: games}, nil
+				return prettyJSONResult(GOGLibraryOutput{Games: games}), GOGLibraryOutput{}, nil
 			},
 		)
 	}
