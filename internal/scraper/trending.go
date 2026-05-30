@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sync"
+	"time"
 
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
@@ -18,6 +20,10 @@ var appIDFromLogo = regexp.MustCompile(`/apps/(\d+)/`)
 // TrendingScraper fetches trending games from external sources.
 type TrendingScraper struct {
 	Client *http.Client
+
+	mu          sync.Mutex
+	cacheGames  []models.Game
+	cacheExpiry time.Time
 }
 
 // NewTrendingScraper creates a new TrendingScraper.
@@ -28,7 +34,16 @@ func NewTrendingScraper() *TrendingScraper {
 }
 
 // GetTrendingGames fetches the top 100 trending games from the Steam store top sellers list.
+// Results are cached for 30 minutes.
 func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
+	s.mu.Lock()
+	if s.cacheGames != nil && time.Now().Before(s.cacheExpiry) {
+		games := s.cacheGames
+		s.mu.Unlock()
+		return games, nil
+	}
+	s.mu.Unlock()
+
 	resp, err := s.Client.Get(trendingURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch trending games: %w", err)
@@ -71,6 +86,11 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 			Name: item.Name,
 		})
 	}
+
+	s.mu.Lock()
+	s.cacheGames = games
+	s.cacheExpiry = time.Now().Add(30 * time.Minute)
+	s.mu.Unlock()
 
 	return games, nil
 }
