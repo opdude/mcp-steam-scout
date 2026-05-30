@@ -12,7 +12,15 @@ This is a Go-based MCP (Model Context Protocol) server that provides tools to an
 Build the binary first with `go tool task build`, then run `./bin/mcp-server`.
 
 ### Testing
-Run all tests using `task test`.
+Run all unit tests using `task test`.
+
+Run integration tests (hits real APIs — requires `.env` with tokens):
+```
+cp .env.example .env   # fill in your tokens
+task test:integration
+```
+
+Integration tests use the `integration` build tag and are excluded from `go test ./...`.
 
 ### Building
 Build the local binary using `task build`.
