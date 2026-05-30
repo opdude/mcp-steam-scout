@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
@@ -30,6 +32,10 @@ type PSNAdapter struct {
 	NPSSO       string
 	AccessToken string
 	Client      *http.Client
+
+	mu          sync.Mutex
+	cacheGames  []models.Game
+	cacheExpiry time.Time
 }
 
 // NewPSNAdapter creates a PSNAdapter and immediately exchanges the NPSSO token for an
@@ -145,7 +151,16 @@ func (p *PSNAdapter) fetchAccessToken(code string) error {
 }
 
 // GetLibrary fetches the authenticated user's PS5 and PS4 game library from the PSN API.
+// Results are cached for 5 minutes.
 func (p *PSNAdapter) GetLibrary() ([]models.Game, error) {
+	p.mu.Lock()
+	if p.cacheGames != nil && time.Now().Before(p.cacheExpiry) {
+		games := p.cacheGames
+		p.mu.Unlock()
+		return games, nil
+	}
+	p.mu.Unlock()
+
 	if p.AccessToken == "" {
 		return nil, fmt.Errorf("PSN access token is not configured")
 	}
@@ -192,6 +207,11 @@ func (p *PSNAdapter) GetLibrary() ([]models.Game, error) {
 			PlaytimeMinutes: parseISO8601Duration(t.PlayDuration),
 		})
 	}
+
+	p.mu.Lock()
+	p.cacheGames = games
+	p.cacheExpiry = time.Now().Add(5 * time.Minute)
+	p.mu.Unlock()
 
 	return games, nil
 }

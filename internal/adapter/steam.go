@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
@@ -13,6 +15,10 @@ type SteamAdapter struct {
 	APIKey         string
 	DefaultSteamID string
 	Client         *http.Client
+
+	mu          sync.Mutex
+	cacheGames  []models.Game
+	cacheExpiry time.Time
 }
 
 // NewSteamAdapter creates a new SteamAdapter.
@@ -25,7 +31,16 @@ func NewSteamAdapter(apiKey, defaultSteamID string) *SteamAdapter {
 }
 
 // GetLibrary fetches the user's owned games from the Steam Web API using the DefaultSteamID.
+// Results are cached for 5 minutes.
 func (s *SteamAdapter) GetLibrary() ([]models.Game, error) {
+	s.mu.Lock()
+	if s.cacheGames != nil && time.Now().Before(s.cacheExpiry) {
+		games := s.cacheGames
+		s.mu.Unlock()
+		return games, nil
+	}
+	s.mu.Unlock()
+
 	if s.APIKey == "" {
 		return nil, fmt.Errorf("steam API key is not configured")
 	}
@@ -68,6 +83,11 @@ func (s *SteamAdapter) GetLibrary() ([]models.Game, error) {
 			PlaytimeMinutes: g.PlaytimeForever,
 		})
 	}
+
+	s.mu.Lock()
+	s.cacheGames = games
+	s.cacheExpiry = time.Now().Add(5 * time.Minute)
+	s.mu.Unlock()
 
 	return games, nil
 }
