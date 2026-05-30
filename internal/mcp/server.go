@@ -2,10 +2,12 @@ package mcp
 
 import (
 	"context"
+	"log"
 
 	mcp_sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/opdude/mcp-steam-scout/internal/adapter"
+	"github.com/opdude/mcp-steam-scout/internal/recommender"
 	"github.com/opdude/mcp-steam-scout/internal/scraper"
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
@@ -57,14 +59,26 @@ type EpicLibraryOutput struct {
 	Games []models.Game `json:"games"`
 }
 
+type GOGLibraryInput struct{}
+type GOGLibraryOutput struct {
+	Games []models.Game `json:"games"`
+}
+
+type RecommendGameInput struct{}
+type RecommendGameOutput struct {
+	recommender.Recommendation
+}
+
 // ServerConfig holds the adapters and scrapers to register as MCP tools.
-// PSN, Xbox, and Epic are optional — set to nil to disable their tools.
+// PSN, Xbox, Epic, and GOG are optional — set to nil to disable their tools.
 type ServerConfig struct {
 	Steam        *adapter.SteamAdapter
 	SteamScraper *scraper.TrendingScraper
 	PSN          *adapter.PSNAdapter
 	Xbox         *adapter.XboxAdapter
 	Epic         *adapter.EpicAdapter
+	GOG          *adapter.GOGAdapter
+	Recommender  *recommender.Recommender
 }
 
 // SetupServer initializes the MCP server with tools based on the provided config.
@@ -223,6 +237,83 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 					}, EpicLibraryOutput{}, nil
 				}
 				return nil, EpicLibraryOutput{Games: games}, nil
+			},
+		)
+	}
+
+	// GOG tools — registered only when a GOG adapter is provided.
+	if cfg.GOG != nil {
+		mcp_sdk.AddTool(
+			server,
+			&mcp_sdk.Tool{
+				Name:        "get_gog_library",
+				Description: "Get games from your GOG library. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
+			},
+			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input GOGLibraryInput) (*mcp_sdk.CallToolResult, GOGLibraryOutput, error) {
+				games, err := cfg.GOG.GetLibrary()
+				if err != nil {
+					return &mcp_sdk.CallToolResult{
+						Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error: " + err.Error()}},
+						IsError: true,
+					}, GOGLibraryOutput{}, nil
+				}
+				return nil, GOGLibraryOutput{Games: games}, nil
+			},
+		)
+	}
+
+	// recommend_game tool — registered when a recommender is configured.
+	if cfg.Recommender != nil {
+		mcp_sdk.AddTool(
+			server,
+			&mcp_sdk.Tool{
+				Name:        "recommend_game",
+				Description: "Get personalized game recommendations by analyzing your libraries across all configured platforms (Steam, PSN, Xbox, Epic) and current trending games. Returns unplayed gems, dabbled games, top played, trending overlap, and trending purchase candidates.",
+			},
+			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input RecommendGameInput) (*mcp_sdk.CallToolResult, RecommendGameOutput, error) {
+				var steamGames, psnGames, xboxGames, epicGames, gogGames []models.Game
+				var err error
+
+				steamGames, err = cfg.Steam.GetLibrary()
+				if err != nil {
+					log.Printf("recommend_game: steam library error: %v", err)
+				}
+
+				if cfg.PSN != nil {
+					psnGames, err = cfg.PSN.GetLibrary()
+					if err != nil {
+						log.Printf("recommend_game: psn library error: %v", err)
+					}
+				}
+
+				if cfg.Xbox != nil {
+					xboxGames, err = cfg.Xbox.GetLibrary(ctx)
+					if err != nil {
+						log.Printf("recommend_game: xbox library error: %v", err)
+					}
+				}
+
+				if cfg.Epic != nil {
+					epicGames, err = cfg.Epic.GetLibrary()
+					if err != nil {
+						log.Printf("recommend_game: epic library error: %v", err)
+					}
+				}
+
+				if cfg.GOG != nil {
+					gogGames, err = cfg.GOG.GetLibrary()
+					if err != nil {
+						log.Printf("recommend_game: gog library error: %v", err)
+					}
+				}
+
+				trending, err := cfg.SteamScraper.GetTrendingGames()
+				if err != nil {
+					log.Printf("recommend_game: trending error: %v", err)
+				}
+
+				rec := cfg.Recommender.Recommend(steamGames, psnGames, xboxGames, epicGames, gogGames, trending)
+				return nil, RecommendGameOutput{rec}, nil
 			},
 		)
 	}

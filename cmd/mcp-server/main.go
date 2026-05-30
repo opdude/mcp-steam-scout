@@ -9,6 +9,7 @@ import (
 
 	"github.com/opdude/mcp-steam-scout/internal/adapter"
 	"github.com/opdude/mcp-steam-scout/internal/mcp"
+	"github.com/opdude/mcp-steam-scout/internal/recommender"
 	"github.com/opdude/mcp-steam-scout/internal/scraper"
 )
 
@@ -41,6 +42,7 @@ func main() {
 	cfg := mcp.ServerConfig{
 		Steam:        steamAdapter,
 		SteamScraper: scraper.NewTrendingScraper(),
+		Recommender:  recommender.New(),
 	}
 
 	// PSN support is optional. When PSN_NPSSO is set, the PSN adapter authenticates
@@ -76,6 +78,19 @@ func main() {
 		} else {
 			cfg.Epic = epicAdapter
 			log.Println("Epic adapter initialized")
+		}
+	}
+
+	// GOG support is optional. When GOG_REFRESH_TOKEN is set, the GOG adapter
+	// is initialized and the get_gog_library tool is registered.
+	if gogRefresh := os.Getenv("GOG_REFRESH_TOKEN"); gogRefresh != "" {
+		gogCookie := os.Getenv("GOG_COOKIE")
+		gogAdapter, err := adapter.NewGOGAdapter(gogRefresh, gogCookie)
+		if err != nil {
+			log.Printf("Warning: failed to initialize GOG adapter: %v", err)
+		} else {
+			cfg.GOG = gogAdapter
+			log.Println("GOG adapter initialized")
 		}
 	}
 
