@@ -231,6 +231,39 @@ func TestIntegration_XboxLibrary(t *testing.T) {
 	}
 }
 
+func TestIntegration_GOGLibrary(t *testing.T) {
+	loadEnv(t)
+	refreshToken := os.Getenv("GOG_REFRESH_TOKEN")
+	if refreshToken == "" {
+		t.Skip("GOG_REFRESH_TOKEN must be set")
+	}
+
+	ctx := newCtx(t)
+	gogAdapter, err := adapter.NewGOGAdapter(refreshToken, os.Getenv("GOG_COOKIE"))
+	if err != nil {
+		t.Fatalf("create GOG adapter: %v", err)
+	}
+
+	cfg := ServerConfig{
+		Steam:        adapter.NewSteamAdapter("", ""),
+		SteamScraper: scraper.NewTrendingScraper(),
+		GOG:          gogAdapter,
+	}
+	srv := SetupServer(cfg)
+	session := connectToServer(t, ctx, srv)
+	defer session.Close()
+
+	result := callTool(t, ctx, session, "get_gog_library", nil)
+	var out GOGLibraryOutput
+	if err := json.Unmarshal([]byte(extractText(t, result)), &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	t.Logf("gog library: %d games", len(out.Games))
+	if len(out.Games) > 0 {
+		t.Logf("first: %s", out.Games[0].Name)
+	}
+}
+
 func TestIntegration_EpicLibrary(t *testing.T) {
 	loadEnv(t)
 	refreshToken := os.Getenv("EPIC_REFRESH_TOKEN")

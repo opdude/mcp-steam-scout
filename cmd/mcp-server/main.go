@@ -81,6 +81,19 @@ func main() {
 		}
 	}
 
+	// GOG support is optional. When GOG_REFRESH_TOKEN is set, the GOG adapter
+	// is initialized and the get_gog_library tool is registered.
+	if gogRefresh := os.Getenv("GOG_REFRESH_TOKEN"); gogRefresh != "" {
+		gogCookie := os.Getenv("GOG_COOKIE")
+		gogAdapter, err := adapter.NewGOGAdapter(gogRefresh, gogCookie)
+		if err != nil {
+			log.Printf("Warning: failed to initialize GOG adapter: %v", err)
+		} else {
+			cfg.GOG = gogAdapter
+			log.Println("GOG adapter initialized")
+		}
+	}
+
 	server := mcp.SetupServer(cfg)
 
 	log.Println("Server setup, running...")
