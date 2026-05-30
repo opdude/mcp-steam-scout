@@ -9,7 +9,6 @@ import (
 
 	"github.com/opdude/mcp-steam-scout/internal/adapter"
 	"github.com/opdude/mcp-steam-scout/internal/mcp"
-	"github.com/opdude/mcp-steam-scout/internal/recommender"
 	"github.com/opdude/mcp-steam-scout/internal/scraper"
 )
 
@@ -42,7 +41,6 @@ func main() {
 	cfg := mcp.ServerConfig{
 		Steam:        steamAdapter,
 		SteamScraper: scraper.NewTrendingScraper(),
-		Recommender:  recommender.New(),
 	}
 
 	// PSN support is optional. When PSN_NPSSO is set, the PSN adapter authenticates

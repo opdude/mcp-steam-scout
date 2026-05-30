@@ -130,6 +130,6 @@ After configuration, help the user verify by:
 1. Restarting their MCP client
 2. Calling each `get_*_library` tool to confirm platforms respond
 3. Calling `get_trending` to confirm trending data works
-4. Optionally calling `recommend_game` to test full cross-platform analysis
+4. Asking for a recommendation to test full cross-platform analysis
 
 If any platform returns an auth error, walk through getting a fresh token for that platform and updating the config.
