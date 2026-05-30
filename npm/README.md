@@ -117,6 +117,23 @@ The tool will guide you through authentication and print the `GOG_REFRESH_TOKEN`
 
 > "Compare my Steam, PlayStation, Xbox, Epic, and GOG libraries — what genres do I play most across all platforms?"
 
+## Installing the skills
+
+This repo includes AI agent skills for cross-platform game recommendations and setup guidance.
+
+```bash
+npx skills add https://github.com/opdude/mcp-steam-scout --skill game-selector
+npx skills add https://github.com/opdude/mcp-steam-scout --skill mcp-steam-scout-setup
+```
+
+For Claude Code, use the plugin marketplace instead:
+
+```bash
+/plugin marketplace add opdude/mcp-steam-scout
+/plugin install game-selector@mcp-steam-scout
+/plugin install mcp-steam-scout-setup@mcp-steam-scout
+```
+
 ## Full documentation
 
 See the [GitHub repository](https://github.com/opdude/mcp-steam-scout) for full setup instructions, configuration options, and development docs.

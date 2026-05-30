@@ -173,16 +173,26 @@ The tool will:
 
 > **Playtime data**: GOG playtime requires an additional web session cookie. Set `GOG_COOKIE` to the value of the `gog-al` cookie from your browser after logging into gog.com. Without it, your GOG library is still available but without playtime data.
 
-### Install the game recommendation skill (Claude Code)
+### Install the skills
 
-This repo also provides a Claude Code skill that gives AI agents cross-platform game recommendation awareness. Install it:
+This repo includes skills that give AI agents cross-platform game recommendation awareness and help with setup.
+
+#### Claude Code
 
 ```bash
 /plugin marketplace add opdude/mcp-steam-scout
 /plugin install game-selector@mcp-steam-scout
+/plugin install mcp-steam-scout-setup@mcp-steam-scout
 ```
 
-The skill makes the agent automatically check all your configured platforms and trending games when you ask for a recommendation.
+#### Other tools (opencode, Claude.ai, etc.)
+
+```bash
+npx skills add https://github.com/opdude/mcp-steam-scout --skill game-selector
+npx skills add https://github.com/opdude/mcp-steam-scout --skill mcp-steam-scout-setup
+```
+
+The skills make the agent automatically check all your configured platforms and trending games when you ask for a recommendation.
 
 ### Validate your PSN NPSSO (optional)
 
