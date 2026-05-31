@@ -24,6 +24,12 @@ Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-
 
 ## Features
 
+### Merged library (always available — calls all configured platforms)
+
+| Tool | What it does |
+|------|-------------|
+| `get_merged_library` | Aggregates your library across **all configured platforms**, normalizes titles (strips edition suffixes, trademark symbols, platform/year tags), merges matching games into single entries with `totalPlaytimeMinutes` summed across platforms, and sorts ascending — unplayed games first |
+
 ### Steam tools
 
 | Tool | What it does |
@@ -35,7 +41,7 @@ Built with the official [MCP Go SDK](https://github.com/modelcontextprotocol/go-
 
 | Tool | What it does |
 |------|-------------|
-| `get_trending` | Returns currently trending games from Steam and GOG |
+| `get_trending` | Returns currently trending games from Steam and GOG with price and rank data |
 
 ### PlayStation tools (optional)
 
@@ -75,11 +81,11 @@ Enabled automatically when `GOG_REFRESH_TOKEN` is set.
 
 Ask Claude things like:
 
-> "Look up my Steam ID for username opdude, fetch my library, check what's trending, and recommend me something new to play based on what I've played the most."
+> "Recommend me something to play based on my cross-platform library and what's trending."
 
 > "What are the top trending games on Steam right now? Which ones match my playstyle based on my library?"
 
-> "Compare my Steam, PlayStation, Xbox, Epic, and GOG libraries — what genres do I play most across all platforms?"
+> "What unplayed games do I already own across all my platforms?"
 
 > "I mostly play strategy games — are any trending games in that genre worth trying?"
 

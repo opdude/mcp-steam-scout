@@ -4,18 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/opdude/mcp-steam-scout/pkg/models"
 )
 
-const trendingURL = "https://store.steampowered.com/search/results/?filter=topsellers&json=1&count=100"
-
-// appIDFromLogo extracts the Steam app ID from a store capsule image URL.
-// Example: https://...steam/apps/730/capsule_sm_120.jpg → "730"
-var appIDFromLogo = regexp.MustCompile(`/apps/(\d+)/`)
+const featuredURL = "https://store.steampowered.com/api/featuredcategories"
 
 // TrendingScraper fetches trending games from external sources.
 type TrendingScraper struct {
@@ -33,7 +29,7 @@ func NewTrendingScraper() *TrendingScraper {
 	}
 }
 
-// GetTrendingGames fetches trending games from Steam, GOG, and Epic Games Store.
+// GetTrendingGames fetches trending games from Steam and GOG.
 // Results are cached for 30 minutes.
 func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 	s.mu.Lock()
@@ -60,7 +56,7 @@ func (s *TrendingScraper) GetTrendingGames() ([]models.Game, error) {
 }
 
 func (s *TrendingScraper) fetchSteamTrending() ([]models.Game, error) {
-	resp, err := s.Client.Get(trendingURL)
+	resp, err := s.Client.Get(featuredURL)
 	if err != nil {
 		return nil, fmt.Errorf("steam request failed: %w", err)
 	}
@@ -71,36 +67,43 @@ func (s *TrendingScraper) fetchSteamTrending() ([]models.Game, error) {
 	}
 
 	var result struct {
-		Items []struct {
-			Name string `json:"name"`
-			Logo string `json:"logo"`
-		} `json:"items"`
+		TopSellers *struct {
+			Items []struct {
+				ID              int    `json:"id"`
+				Name            string `json:"name"`
+				Discounted      bool   `json:"discounted"`
+				DiscountPercent int    `json:"discount_percent"`
+				OriginalPrice   int    `json:"original_price"`
+				FinalPrice      int    `json:"final_price"`
+				Currency        string `json:"currency"`
+			} `json:"items"`
+		} `json:"top_sellers"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode steam response: %w", err)
 	}
 
-	seen := make(map[string]bool)
-	var games []models.Game
+	if result.TopSellers == nil {
+		return nil, nil
+	}
 
-	for _, item := range result.Items {
+	games := make([]models.Game, 0, len(result.TopSellers.Items))
+	for i, item := range result.TopSellers.Items {
 		if item.Name == "" {
 			continue
 		}
-		m := appIDFromLogo.FindStringSubmatch(item.Logo)
-		if m == nil {
-			continue
-		}
-		id := m[1]
-		if seen[id] {
-			continue
-		}
-		seen[id] = true
+		priceAmount := fmt.Sprintf("%d.%02d", item.FinalPrice/100, item.FinalPrice%100)
+		priceBaseAmount := fmt.Sprintf("%d.%02d", item.OriginalPrice/100, item.OriginalPrice%100)
 		games = append(games, models.Game{
-			ID:       id,
-			Name:     item.Name,
-			Platform: "steam",
+			ID:                strconv.Itoa(item.ID),
+			Name:              item.Name,
+			Platform:          "steam",
+			PriceAmount:       priceAmount,
+			PriceBaseAmount:   priceBaseAmount,
+			PriceIsDiscounted: item.Discounted,
+			PriceCurrency:     item.Currency,
+			Rank:              i + 1,
 		})
 	}
 
