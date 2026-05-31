@@ -35,6 +35,12 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
 
 ## Available tools
 
+### Merged library (always available — calls all configured platforms)
+
+| Tool | Description |
+|------|-------------|
+| `get_merged_library` | Aggregates your library across all configured platforms, normalizes titles, merges matching games with summed playtime, sorted ascending — unplayed first |
+
 ### Steam
 
 | Tool | Description |
@@ -46,7 +52,7 @@ You **must** set `STEAM_API_KEY`, and **at least one** of `STEAM_ID` or `STEAM_U
 
 | Tool | Description |
 |------|-------------|
-| `get_trending` | Get currently trending games from Steam and GOG |
+| `get_trending` | Get currently trending games from Steam and GOG with price and rank data |
 
 ### PlayStation (requires `PSN_NPSSO`)
 
@@ -118,9 +124,9 @@ The tool will guide you through authentication and print the `GOG_REFRESH_TOKEN`
 
 ## Example prompts
 
-> "Fetch my Steam library, check what's trending, and recommend me something new to play based on what I've played the most."
+> "Recommend me something to play based on my cross-platform library and what's trending."
 
-> "Compare my Steam, PlayStation, Xbox, Epic, and GOG libraries — what genres do I play most across all platforms?"
+> "What unplayed games do I already own across all my platforms?"
 
 ## Installing the skills
 

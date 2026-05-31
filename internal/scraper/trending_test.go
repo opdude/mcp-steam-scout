@@ -52,12 +52,14 @@ func TestGetTrendingGames_HTTPError(t *testing.T) {
 
 func TestGetTrendingGames_ParsesItems(t *testing.T) {
 	s, srv := newTestScraper(t, map[string]http.HandlerFunc{
-		"/search/results/": func(w http.ResponseWriter, r *http.Request) {
+		"/api/featuredcategories": func(w http.ResponseWriter, r *http.Request) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"items": []map[string]any{
-					{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
-					{"name": "Game B", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
-					{"name": "Game C", "logo": "https://cdn.example.com/store_item_assets/steam/apps/300/capsule.jpg"},
+				"top_sellers": map[string]any{
+					"items": []map[string]any{
+						{"id": 100, "name": "Game A", "discounted": false, "discount_percent": 0, "original_price": 5999, "final_price": 5999, "currency": "USD"},
+						{"id": 200, "name": "Game B", "discounted": true, "discount_percent": 50, "original_price": 3999, "final_price": 1999, "currency": "EUR"},
+						{"id": 300, "name": "Game C", "discounted": false, "discount_percent": 0, "original_price": 0, "final_price": 0, "currency": "USD"},
+					},
 				},
 			})
 		},
@@ -68,14 +70,33 @@ func TestGetTrendingGames_ParsesItems(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(games) < 3 {
-		t.Fatalf("expected at least 3 games, got %d", len(games))
-	}
 	found := 0
 	for _, g := range games {
 		switch g.ID {
-		case "100", "200", "300":
+		case "100":
 			found++
+			if g.Rank != 1 {
+				t.Errorf("expected Game A rank 1, got %d", g.Rank)
+			}
+			if g.PriceAmount != "59.99" || g.PriceBaseAmount != "59.99" {
+				t.Errorf("unexpected prices for Game A: %s / %s", g.PriceAmount, g.PriceBaseAmount)
+			}
+		case "200":
+			found++
+			if g.Rank != 2 {
+				t.Errorf("expected Game B rank 2, got %d", g.Rank)
+			}
+			if !g.PriceIsDiscounted {
+				t.Error("expected Game B to be discounted")
+			}
+			if g.PriceCurrency != "EUR" {
+				t.Errorf("expected EUR currency, got %s", g.PriceCurrency)
+			}
+		case "300":
+			found++
+			if g.Rank != 3 {
+				t.Errorf("expected Game C rank 3, got %d", g.Rank)
+			}
 		}
 	}
 	if found != 3 {
@@ -83,43 +104,15 @@ func TestGetTrendingGames_ParsesItems(t *testing.T) {
 	}
 }
 
-func TestGetTrendingGames_Deduplicates(t *testing.T) {
+func TestGetTrendingGames_SkipsEmptyNames(t *testing.T) {
 	s, srv := newTestScraper(t, map[string]http.HandlerFunc{
-		"/search/results/": func(w http.ResponseWriter, r *http.Request) {
+		"/api/featuredcategories": func(w http.ResponseWriter, r *http.Request) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"items": []map[string]any{
-					{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
-					{"name": "Game A", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
-					{"name": "Game B", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
-				},
-			})
-		},
-	})
-	defer srv.Close()
-
-	games, err := s.GetTrendingGames()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	steamCount := 0
-	for _, g := range games {
-		if g.Platform == "steam" {
-			steamCount++
-		}
-	}
-	if steamCount != 2 {
-		t.Fatalf("expected 2 steam games after dedup, got %d", steamCount)
-	}
-}
-
-func TestGetTrendingGames_SkipsEmptyNamesAndMissingIDs(t *testing.T) {
-	s, srv := newTestScraper(t, map[string]http.HandlerFunc{
-		"/search/results/": func(w http.ResponseWriter, r *http.Request) {
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"items": []map[string]any{
-					{"name": "", "logo": "https://cdn.example.com/store_item_assets/steam/apps/100/capsule.jpg"},
-					{"name": "No ID Game", "logo": "https://cdn.example.com/no-app-id-here.jpg"},
-					{"name": "Valid Game", "logo": "https://cdn.example.com/store_item_assets/steam/apps/200/capsule.jpg"},
+				"top_sellers": map[string]any{
+					"items": []map[string]any{
+						{"id": 100, "name": "", "discounted": false, "discount_percent": 0, "original_price": 0, "final_price": 0, "currency": "USD"},
+						{"id": 200, "name": "Valid Game", "discounted": false, "discount_percent": 0, "original_price": 5999, "final_price": 5999, "currency": "USD"},
+					},
 				},
 			})
 		},
@@ -143,8 +136,8 @@ func TestGetTrendingGames_SkipsEmptyNamesAndMissingIDs(t *testing.T) {
 
 func TestGetTrending_GOG(t *testing.T) {
 	s, srv := newTestScraper(t, map[string]http.HandlerFunc{
-		"/search/results/": func(w http.ResponseWriter, r *http.Request) {
-			_ = json.NewEncoder(w).Encode(map[string]any{"items": []map[string]any{}})
+		"/api/featuredcategories": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"top_sellers": map[string]any{"items": []map[string]any{}}})
 		},
 		"/games/ajax/filtered": func(w http.ResponseWriter, r *http.Request) {
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -165,6 +158,12 @@ func TestGetTrending_GOG(t *testing.T) {
 	for _, g := range games {
 		if g.Platform == "gog" {
 			gogCount++
+			if g.ID == "1001" && g.Rank != 1 {
+				t.Errorf("expected GOG Game A rank 1, got %d", g.Rank)
+			}
+			if g.ID == "1002" && g.Rank != 2 {
+				t.Errorf("expected GOG Game B rank 2, got %d", g.Rank)
+			}
 			if g.ID != "1001" && g.ID != "1002" {
 				t.Errorf("unexpected gog game id: %s", g.ID)
 			}

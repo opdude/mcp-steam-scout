@@ -77,6 +77,11 @@ type GOGLibraryOutput struct {
 	Games []models.Game `json:"games"`
 }
 
+type MergedLibraryInput struct{}
+type MergedLibraryOutput struct {
+	Games []models.MergedGame `json:"games"`
+}
+
 // ServerConfig holds the adapters and scrapers to register as MCP tools.
 // PSN, Xbox, Epic, and GOG are optional — set to nil to disable their tools.
 type ServerConfig struct {
@@ -100,7 +105,7 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 		server,
 		&mcp_sdk.Tool{
 			Name:        "get_trending",
-			Description: "Get currently trending games from the Steam store and GOG. The playtimeMinutes field in each game represents playtime in minutes, not hours.",
+			Description: "Get currently trending games from the Steam store and GOG, ranked by popularity (1 = top seller). The playtimeMinutes field in each game represents playtime in minutes, not hours. The rank field indicates the game's position within its platform's trending list.",
 		},
 		func(ctx context.Context, req *mcp_sdk.CallToolRequest, input TrendingInput) (*mcp_sdk.CallToolResult, TrendingOutput, error) {
 			games, err := cfg.SteamScraper.GetTrendingGames()
@@ -271,6 +276,62 @@ func SetupServer(cfg ServerConfig) *mcp_sdk.Server {
 					}, GOGLibraryOutput{}, nil
 				}
 				return prettyJSONResult(GOGLibraryOutput{Games: games}), GOGLibraryOutput{}, nil
+			},
+		)
+	}
+
+	// Merged library — calls all available adapters and merges results.
+	alwaysRegisterMerged := true
+	if alwaysRegisterMerged {
+		mcp_sdk.AddTool(
+			server,
+			&mcp_sdk.Tool{
+				Name: "get_merged_library",
+				Description: "Get a merged view of your game library across all configured platforms. " +
+					"Titles are normalized (edition suffixes, trademark symbols, and platform tags are stripped) " +
+					"and matching games are merged into a single entry with totalPlaytimeMinutes summed across platforms. " +
+					"Sorted by total playtime ascending — unplayed games appear first. " +
+					"The playtimeMinutes field in each game entry represents minutes, not hours.",
+			},
+			func(ctx context.Context, req *mcp_sdk.CallToolRequest, input MergedLibraryInput) (*mcp_sdk.CallToolResult, MergedLibraryOutput, error) {
+				var steam, psn, xbox, epic, gog []models.Game
+				var err error
+
+				steam, err = cfg.Steam.GetLibrary()
+				if err != nil {
+					return &mcp_sdk.CallToolResult{
+						Content: []mcp_sdk.Content{&mcp_sdk.TextContent{Text: "Error fetching Steam library: " + err.Error()}},
+						IsError: true,
+					}, MergedLibraryOutput{}, nil
+				}
+
+				if cfg.PSN != nil {
+					psn, err = cfg.PSN.GetLibrary()
+					if err != nil {
+						psn = nil
+					}
+				}
+				if cfg.Xbox != nil {
+					xbox, err = cfg.Xbox.GetLibrary(ctx)
+					if err != nil {
+						xbox = nil
+					}
+				}
+				if cfg.Epic != nil {
+					epic, err = cfg.Epic.GetLibrary()
+					if err != nil {
+						epic = nil
+					}
+				}
+				if cfg.GOG != nil {
+					gog, err = cfg.GOG.GetLibrary()
+					if err != nil {
+						gog = nil
+					}
+				}
+
+				merged := MergeLibraries(steam, psn, xbox, epic, gog)
+				return prettyJSONResult(MergedLibraryOutput{Games: merged}), MergedLibraryOutput{}, nil
 			},
 		)
 	}

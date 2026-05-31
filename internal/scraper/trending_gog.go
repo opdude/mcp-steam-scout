@@ -70,7 +70,7 @@ func (s *TrendingScraper) fetchGOGList(url string) ([]models.Game, error) {
 
 	games := make([]models.Game, 0, len(result.Products))
 	seen := make(map[int]bool)
-	for _, p := range result.Products {
+	for i, p := range result.Products {
 		if p.Title == "" || seen[p.ID] {
 			continue
 		}
@@ -83,6 +83,7 @@ func (s *TrendingScraper) fetchGOGList(url string) ([]models.Game, error) {
 			PriceBaseAmount:   p.Price.BaseAmount,
 			PriceIsDiscounted: p.Price.IsDiscounted,
 			PriceCurrency:     p.Price.Symbol,
+			Rank:              i + 1,
 		})
 	}
 
