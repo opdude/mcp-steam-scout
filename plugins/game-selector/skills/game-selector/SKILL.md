@@ -27,6 +27,14 @@ The `get_merged_library` tool automatically detects which platforms are configur
 3. **Trending purchase candidates** — trending games that match genres you play
 4. **Revisit old favorites** — games you have significant playtime in but haven't played recently
 
+## Handling Large MCP Output
+
+`get_merged_library` can return 10,000+ lines of JSON and will be truncated by the tool output limit. You cannot read it directly. Instead:
+
+- The truncated output is saved to a file by the tool output handler (path shown in the tool result message).
+- Use **subagents** (Task tool) with `grep` to extract meaningful slices from that saved file.
+- Search by `totalPlaytimeMinutes` to find played vs unplayed games.
+
 ## Key Analysis Tips
 
 - **`totalPlaytimeMinutes` is already normalized across platforms** — `get_merged_library` handles this server-side. A game with `totalPlaytimeMinutes: 0` is truly unplayed across all platforms you own it on.
@@ -37,21 +45,34 @@ The `get_merged_library` tool automatically detects which platforms are configur
 - **GOG playtime** requires the `GOG_COOKIE` env var; without it, GOG games have 0 playtime but still count as "owned".
 - **Cross-platform patterns**: Use the `platforms` array in each merged entry to see which platforms you own a game on. Compare what you play on each platform to identify genre preferences.
 
+## Analysis Steps (after calling MCP tools)
+
+After `get_merged_library` and `get_trending` return:
+
+### Step 1: Identify genre preferences from top played games
+Launch a subagent to parse the saved `get_merged_library` output. Have it grep for the top 25 games by `totalPlaytimeMinutes` (descending) and extract their `displayName`. Convert minutes to hours. This reveals the user's genre preferences.
+
+### Step 2: Find unplayed gems that match those genres
+Have the same or another subagent scan the saved output for games with `totalPlaytimeMinutes: 0` whose display names suggest they match genres identified in Step 1. Return the top 10 most interesting matches with their platforms.
+
+### Step 3: Cross-reference with trending
+Scan the trending game names against the unplayed library list. If a trending game is already owned (unplayed), flag it as a high-priority recommendation.
+
+### Step 4: Make the recommendation
+Follow the Recommendation Priority. Present 2-3 options with a clear top pick, explaining why each fits the user's taste based on their most-played genres.
+
 ## Example Flow
 
 ```
 User: "What should I play tonight?"
 Agent:
-  1. Checks available tools — sees get_merged_library, get_trending
-  2. Calls get_merged_library → 200 merged games across Steam/PSN/Xbox/Epic/GOG, sorted by playtime ascending
-  3. Calls get_trending → 10 trending titles
-  4. Reads merged results: unplayed games appear first with totalPlaytimeMinutes: 0
-  5. Analysis:
-     - Top playtime: Elden Ring (155h on PSN), Dark Souls III (116h PSN), Civ V (75h Steam) → likes RPGs & strategy
-     - Unplayed (totalPlaytimeMinutes: 0): Baldur's Gate 3 (Xbox), Nioh Complete (Epic), Frostpunk (Xbox/Epic)
-     - Trending overlap: user owns none
-     - Trending games are mostly action-RPGs
-  6. Recommends:
+  1. Calls get_merged_library → 200+ merged games, output truncated (14K lines)
+  2. Calls get_trending → trending titles
+  3. Launches subagent to extract top 25 played games from the saved MCP output using grep
+  4. Subagent returns: Elden Ring (261h), Dark Souls III (142h), Civ V (75h) → likes RPGs & strategy
+  5. Launches subagent to find unplayed matches → Baldur's Gate 3 (Xbox), Nioh Complete (Epic), Frostpunk (Xbox/Epic)
+  6. Cross-references trending → user owns none
+  7. Recommends:
       - "Baldur's Gate 3 (Xbox) — unplayed. Deep CRPG combining your love of RPGs and tactical strategy."
-      - "Nioh: The Complete Edition (Epic) — unplayed. You have 155h in Elden Ring — Nioh is a combat-focused souls-like with deep mechanics."
+      - "Nioh: The Complete Edition (Epic) — unplayed. You have 261h in Elden Ring — Nioh is a combat-focused souls-like."
 ```
