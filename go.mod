@@ -1,12 +1,12 @@
 module github.com/opdude/mcp-steam-scout
 
-go 1.25.8
+go 1.26.0
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/modelcontextprotocol/go-sdk v1.6.1
-	golang.org/x/oauth2 v0.36.0
+	github.com/modelcontextprotocol/go-sdk v1.7.0
+	golang.org/x/oauth2 v0.37.0
 )
 
 require (
